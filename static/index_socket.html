@@ -6,23 +6,19 @@
 	<title>Ajax chat</title>
 	<link rel="stylesheet" href="/static/bootstrap.css">
 	<style type="text/css">
-		#messagesArea{
+		#messagesArea,{
 			overflow-y: scroll;
-			border:1px solid silver;
+			border-radius: 10px;
+			height: 400px;
+			margin-top: 30px;
+			background: cornsilk;
 		}
-		#messagesArea > ul >li{
+		#messagesArea span{
+			display: block;
+			padding: 20px;
+			background-color:azure;
 			border-radius: 10px 40xp 20px;
 			margin:6px;
-		}
-		#messagesArea > ul li> i{
-			font-weight:bold;
-			display: block;
-		}
-
-		#messagesArea > ul >li >b{
-			font-style:italic;
-			display: block;
-			background: cornsilk;
 		}
 	</style>
 	<script src="https://cdn.socket.io/socket.io-1.0.0.js"></script>
@@ -48,16 +44,25 @@
 		</div>
 	</div>
 </div>
+<ul id="messagesArea">
 <script id="messagesTemplate" type="text/x-handlebars-template">
-			<ul>
-			{{#each response}}
-			<li>
-				<i>{{userName}}</i>
+		{{#each response}}
+
+			<span>
+				<i>{{userName}}:</i>
 				<b>{{userMessage}}</b>
-			</li>
-			{{/each}}
-			</ul>
-			</script>
+			</span>
+
+		{{/each}}
+</script>
+<script id="messageTemplate" type="text/x-handlebars-template">
+
+			<span>
+				<i>{{response.userName}}:</i>
+				<b>{{response.userMessage}}</b>
+			</span>
+</script>
+</ul>
 <script type="text/javascript">
 	var ajaxChat = (function() {
 		var chatEngine = {
@@ -65,9 +70,7 @@
 			_userData: {
 				name: null
 			},
-			_interval: null,
 			_htmlControls: {},
-			cont:this,
 			socket: io.connect(),
 			_handlers: {
 				sendMessageToServer: function(cont){
@@ -78,28 +81,31 @@
 					this.postMessage(data);
 				}
 			},
-			sendRequest: function(data) {
-				this.socket.emit('chat message', data);
+			sendRequest: function(data, event) {
+				this.socket.emit(event, data);
 			},
 
 			setNewData:function(data){
+				var oldHtml = this._htmlControls.messageContainer.innerHTML;
+				var template = document.getElementById('messageTemplate').innerHTML;
+				var templateScript = Handlebars.compile(template);
+				var html = templateScript({response:data});
+				this._htmlControls.messageContainer.innerHTML = oldHtml + html;
+			},
+			setAllData: function(data){
 				var template = document.getElementById('messagesTemplate').innerHTML;
 				var templateScript = Handlebars.compile(template);
 				var html = templateScript({response:data});
 				this._htmlControls.messageContainer.innerHTML = html;
 			},
 			postMessage: function(data){
-				this.sendRequest(data);
+				this.sendRequest(data, 'chat message');
 			},
 			getMessages: function() {
 				var that = this;
-				this.sendRequest({
-					//переписать урл в настройки
-					url: '/messages',
-					method: 'GET',
-					callback: function(msg){
-						that.setNewData(JSON.parse(msg));
-					}
+				this.socket.on('delivery',function(msg){
+					that.setNewData(msg);
+					console.log(msg.userName);
 				});
 			},
 			setControls: function(elements){
@@ -112,13 +118,6 @@
 				this._htmlControls.sendButton.addEventListener("click", this._handlers.sendMessageToServer.bind(this));
 				this._htmlControls.clearButton.addEventListener("click", this.clearTimeInterval);
 			},
-			setTimeInterval: function(){
-				var bindCallback = this.getMessages.bind(this);
-				chatEngine._interval = setInterval(bindCallback, 3000);
-			},
-			clearTimeInterval: function(){
-				clearInterval(chatEngine._interval);
-			}
 		}
 
 		return{
@@ -128,7 +127,13 @@
 				}
 			},
 			appRun: function() {
-				chatEngine.setTimeInterval();
+				var that = chatEngine;
+				chatEngine.socket.on('delivery',function(msg){
+					that.setNewData(msg);
+				});
+				chatEngine.socket.on('chat history', function(msg){
+					chatEngine.setAllData(msg);
+				});
 			},
 			appTerminate: function(){
 				chatEngine.clearTimeInterval();
@@ -146,7 +151,7 @@
 	});
 
 	ajaxChat.appRun();
-
+	
 </script>
 
 </body>

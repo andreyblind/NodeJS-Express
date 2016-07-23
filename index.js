@@ -35,12 +35,13 @@ io.on('connection', function(socket) {
 	console.info('Client connected');
 
 	socket.on('disconnected', function() {
-		console.log('Client disconnected');
+		console.info('Client disconnected');
 	});
 
 	socket.on('chat message', function(msg) {
 		messages.push(msg);
-		io.emit('chat message', msg);
+		console.log(msg);
+		io.emit('delivery', msg);
 	});
 
 	socket.emit('chat history', messages);
