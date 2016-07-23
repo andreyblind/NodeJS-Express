@@ -25,6 +25,8 @@
 			background: cornsilk;
 		}
 	</style>
+	<script src="https://cdn.socket.io/socket.io-1.0.0.js"></script>
+	<script type="text/javascript" src="/static/template.js"></script>
 </head>
 <body>
 <div class="container">
@@ -66,6 +68,7 @@
 			_interval: null,
 			_htmlControls: {},
 			cont:this,
+			socket: io.connect(),
 			_handlers: {
 				sendMessageToServer: function(cont){
 					var data = {
@@ -75,23 +78,10 @@
 					this.postMessage(data);
 				}
 			},
-			sendRequest: function(options) {
-				var url = options.url || '/',
-				method = options.method || 'GET',
-				callback = options.callback || function() {
-							console.info("Callback not defined!");
-						},
-				data = options.data || {},
-				xmlHttp = new XMLHttpRequest();
-				xmlHttp.open(method, url, true);
-				xmlHttp.setRequestHeader('Content-Type', 'application/json');
-				xmlHttp.send(JSON.stringify(data));
-				xmlHttp.onreadystatechange = function() {
-					if(xmlHttp.status == 200 && xmlHttp.readyState === 4) {
-						callback(xmlHttp.responseText);
-					}
-				};
+			sendRequest: function(data) {
+				this.socket.emit('chat message', data);
 			},
+
 			setNewData:function(data){
 				var template = document.getElementById('messagesTemplate').innerHTML;
 				var templateScript = Handlebars.compile(template);
@@ -99,11 +89,7 @@
 				this._htmlControls.messageContainer.innerHTML = html;
 			},
 			postMessage: function(data){
-				this.sendRequest({
-					url:"/messages",
-					method:"post",
-					data:data
-				});
+				this.sendRequest(data);
 			},
 			getMessages: function() {
 				var that = this;
@@ -162,7 +148,6 @@
 	ajaxChat.appRun();
 
 </script>
-<script type="text/javascript" src="/static/template.js"></script>
 
 </body>
 </html>
