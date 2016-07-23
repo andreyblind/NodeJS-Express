@@ -30,7 +30,6 @@
 <div class="container">
 	<div class="row">
 		<div class="col-md-12">
-
   				<div class="form-group">
 			    <label for="name">Name</label>
 			    <input type="text" class="form-control" id="name" placeholder="enter your name" id="name">
@@ -40,6 +39,7 @@
 			    <input type="text" class="form-control" id="message" placeholder="enter your message" id="message">
 			  </div>
   				<button class="btn btn-default" id="send">Отправить</button>
+				<button class="btn btn-default" id="clear">Покинуть чат</button>
 		</div>
 		<div class="col-md-12" id="messagesArea">
 
@@ -71,7 +71,6 @@
 					var data = {
 						userMessage:this._htmlControls.userMessage.value,
 						userName:this._htmlControls.userName.value
-
 					}
 					this.postMessage(data);
 				}
@@ -125,20 +124,20 @@
 					}
 				}
 				this._htmlControls.sendButton.addEventListener("click", this._handlers.sendMessageToServer.bind(this));
+				this._htmlControls.clearButton.addEventListener("click", this.clearTimeInterval);
 			},
 			setTimeInterval: function(){
 				var bindCallback = this.getMessages.bind(this);
-				this._interval = setInterval(bindCallback, 1000);
+				chatEngine._interval = setInterval(bindCallback, 3000);
 			},
 			clearTimeInterval: function(){
-				var bindCallback = this.getMessages.bind(this);
-				this._interval = setInterval(bindCallback, 0);
+				clearInterval(chatEngine._interval);
 			}
 		}
 
 		return{
 			appInit: function(elements){
-				if( (typeof elements == 'object') && ( (Object.keys(elements)).length == 4) ){
+				if( (typeof elements == 'object') && ( (Object.keys(elements)).length == 5) ){
 					chatEngine.setControls(elements);
 				}
 			},
@@ -156,7 +155,8 @@
 		userName: "#name",
 		userMessage: "#message",
 		sendButton: "#send",
-		messageContainer: "#messagesArea"
+		messageContainer: "#messagesArea",
+		clearButton: "#clear"
 	});
 
 	ajaxChat.appRun();
