@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Ajax chat</title>
+	<link rel="stylesheet" href="/static/bootstrap.css">
+	<style type="text/css">
+		#messagesArea{
+			overflow-y: scroll;
+			border:1px solid silver;
+		}
+		#messagesArea > ul >li{
+			border-radius: 10px 40xp 20px;
+			margin:6px;
+		}
+		#messagesArea > ul li> i{
+			font-weight:bold;
+			display: block;
+		}
+
+		#messagesArea > ul >li >b{
+			font-style:italic;
+			display: block;
+			background: cornsilk;
+		}
+	</style>
+</head>
+<body>
+<div class="container">
+	<div class="row">
+		<div class="col-md-12">
+  				<div class="form-group">
+			    <label for="name">Name</label>
+			    <input type="text" class="form-control" id="name" placeholder="enter your name" id="name">
+			  </div>
+			  <div class="form-group">
+			    <label for="message">Message</label>
+			    <input type="text" class="form-control" id="message" placeholder="enter your message" id="message">
+			  </div>
+  				<button class="btn btn-default" id="send">Отправить</button>
+				<button class="btn btn-default" id="clear">Покинуть чат</button>
+		</div>
+		<div class="col-md-12" id="messagesArea">
+
+		</div>
+	</div>
+</div>
+<script id="messagesTemplate" type="text/x-handlebars-template">
+			<ul>
+			{{#each response}}
+			<li>
+				<i>{{userName}}</i>
+				<b>{{userMessage}}</b>
+			</li>
+			{{/each}}
+			</ul>
+			</script>
+<script type="text/javascript">
+	var ajaxChat = (function() {
+		var chatEngine = {
+			_msgArr: [],
+			_userData: {
+				name: null
+			},
+			_interval: null,
+			_htmlControls: {},
+			cont:this,
+			_handlers: {
+				sendMessageToServer: function(cont){
+					var data = {
+						userMessage:this._htmlControls.userMessage.value,
+						userName:this._htmlControls.userName.value
+					}
+					this.postMessage(data);
+				}
+			},
+			sendRequest: function(options) {
+				var url = options.url || '/',
+				method = options.method || 'GET',
+				callback = options.callback || function() {
+							console.info("Callback not defined!");
+						},
+				data = options.data || {},
+				xmlHttp = new XMLHttpRequest();
+				xmlHttp.open(method, url, true);
+				xmlHttp.setRequestHeader('Content-Type', 'application/json');
+				xmlHttp.send(JSON.stringify(data));
+				xmlHttp.onreadystatechange = function() {
+					if(xmlHttp.status == 200 && xmlHttp.readyState === 4) {
+						callback(xmlHttp.responseText);
+					}
+				};
+			},
+			setNewData:function(data){
+				var template = document.getElementById('messagesTemplate').innerHTML;
+				var templateScript = Handlebars.compile(template);
+				var html = templateScript({response:data});
+				this._htmlControls.messageContainer.innerHTML = html;
+			},
+			postMessage: function(data){
+				this.sendRequest({
+					url:"/messages",
+					method:"post",
+					data:data
+				});
+			},
+			getMessages: function() {
+				var that = this;
+				this.sendRequest({
+					//переписать урл в настройки
+					url: '/messages',
+					method: 'GET',
+					callback: function(msg){
+						that.setNewData(JSON.parse(msg));
+					}
+				});
+			},
+			setControls: function(elements){
+				for (var k in elements){
+					var element = document.querySelector(elements[k]);
+					if(element){
+						this._htmlControls[k] = element;
+					}
+				}
+				this._htmlControls.sendButton.addEventListener("click", this._handlers.sendMessageToServer.bind(this));
+				this._htmlControls.clearButton.addEventListener("click", this.clearTimeInterval);
+			},
+			setTimeInterval: function(){
+				var bindCallback = this.getMessages.bind(this);
+				chatEngine._interval = setInterval(bindCallback, 3000);
+			},
+			clearTimeInterval: function(){
+				clearInterval(chatEngine._interval);
+			}
+		}
+
+		return{
+			appInit: function(elements){
+				if( (typeof elements == 'object') && ( (Object.keys(elements)).length == 5) ){
+					chatEngine.setControls(elements);
+				}
+			},
+			appRun: function() {
+				chatEngine.setTimeInterval();
+			},
+			appTerminate: function(){
+				chatEngine.clearTimeInterval();
+				chatEngine._msgArr = [];
+			}
+		}
+	})();
+
+	ajaxChat.appInit({
+		userName: "#name",
+		userMessage: "#message",
+		sendButton: "#send",
+		messageContainer: "#messagesArea",
+		clearButton: "#clear"
+	});
+
+	ajaxChat.appRun();
+
+</script>
+<script type="text/javascript" src="/static/template.js"></script>
+
+</body>
+</html>

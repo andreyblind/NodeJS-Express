@@ -1,6 +1,7 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var socketio = require('socket.io');
+
 var messages = [];
 var app = express();
 app.use('/static', express.static('static'));
@@ -21,5 +22,9 @@ app.post('/messages', function (req, res) {
 	var message = req.body;
 	messages.push(message);
 	res.json(message);
+});
+
+app.get('/sockets', function (req, res) {
+	res.sendfile(__dirname + "/static/index_socket.html");
 });
 
