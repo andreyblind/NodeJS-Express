@@ -7,10 +7,6 @@ var app = express();
 var server = app.listen(8000);
 var io = socketio.listen(server);
 app.use('/static', express.static('static'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-
-
 
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + "/static/index_ajax.html");
@@ -40,7 +36,6 @@ io.on('connection', function(socket) {
 
 	socket.on('chat message', function(msg) {
 		messages.push(msg);
-		console.log(msg);
 		io.emit('delivery', msg);
 	});
 
