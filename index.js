@@ -1,11 +1,14 @@
 var express = require('express');
 var socketio = require('socket.io');
-
+var bodyParser = require('body-parser');
 var messages = [];
 var app = express();
 var server = app.listen(8000);
 var io = socketio.listen(server);
 app.use('/static', express.static('static'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+
 
 app.get('/', function (req, res) {
 	res.sendFile(__dirname + "/static/index_ajax.html");
